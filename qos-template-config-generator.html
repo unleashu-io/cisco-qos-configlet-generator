@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cisco QoS Artifact Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f111a;
+            --card-bg: rgba(25, 28, 41, 0.65);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --input-bg: rgba(15, 17, 26, 0.6);
+            --input-border: rgba(255, 255, 255, 0.12);
+            --input-focus: rgba(99, 102, 241, 0.5);
+            --code-bg: rgba(10, 11, 16, 0.8);
+            --error: #ef4444;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+            padding: 2rem 1rem;
+        }
+
+        .background-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .orb-1 {
+            top: -10%;
+            left: 10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(99,102,241,0.8) 0%, rgba(99,102,241,0) 70%);
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            bottom: -20%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(236,72,153,0.6) 0%, rgba(236,72,153,0) 70%);
+            animation-delay: -5s;
+        }
+
+        .orb-3 {
+            top: 40%;
+            left: 60%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(16,185,129,0.5) 0%, rgba(16,185,129,0) 70%);
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .generator-card, .result-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+
+        input {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-main);
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        input[type="file"] {
+            padding: 0.75rem 1rem;
+        }
+
+        input[type="file"]::file-selector-button {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            margin-right: 1rem;
+            transition: background 0.2s;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        input::placeholder {
+            color: #475569;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--input-focus);
+        }
+
+        button {
+            cursor: pointer;
+            font-family: inherit;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        #generate-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+        }
+
+        #generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 20px -3px rgba(99, 102, 241, 0.4);
+        }
+
+        #generate-btn:active {
+            transform: translateY(0);
+        }
+
+        .secondary-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .result-card.hidden {
+            display: none;
+            opacity: 0;
+        }
+
+        .result-card {
+            animation: fadeUp 0.5s ease forwards;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .code-wrapper {
+            background: var(--code-bg);
+            border-radius: 12px;
+            border: 1px solid var(--input-border);
+            padding: 1.5rem;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        pre {
+            margin: 0;
+        }
+
+        code {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+            white-space: pre-wrap;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .toast.hidden {
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--error);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-elements">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+    </div>
+
+    <main class="container">
+        <header>
+            <h1>QoS Artifact Generator</h1>
+            <p>Generate precise Cisco QoS templates and policy maps entirely in your browser.</p>
+        </header>
+
+        <section class="generator-card">
+            <form id="generator-form">
+                <div class="input-group">
+                    <label for="policy_file">Upload 'Policy-Map - Port QoS' File</label>
+                    <input type="file" id="policy_file" accept=".txt,*" required>
+                </div>
+                
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="vlan_id">VLAN ID</label>
+                        <input type="number" id="vlan_id" placeholder="e.g. 72" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="rate">Target Rate (Mbps)</label>
+                        <input type="number" id="rate" placeholder="e.g. 100" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="custom_description">Custom Description (Optional)</label>
+                    <input type="text" id="custom_description" placeholder="Override default description...">
+                </div>
+
+                <button type="submit" id="generate-btn">
+                    <span>Generate Configurations</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </form>
+        </section>
+
+        <section class="result-card hidden" id="result-container">
+            <div class="result-header">
+                <h2>Generated Configurations</h2>
+                <button id="copy-btn" class="secondary-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy</span>
+                </button>
+            </div>
+            <div class="code-wrapper">
+                <pre><code id="output-code"></code></pre>
+            </div>
+        </section>
+        
+        <div id="error-toast" class="toast hidden"></div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('generator-form');
+            const resultContainer = document.getElementById('result-container');
+            const outputCode = document.getElementById('output-code');
+            const copyBtn = document.getElementById('copy-btn');
+            const generateBtn = document.getElementById('generate-btn');
+            const toast = document.getElementById('error-toast');
+            const fileInput = document.getElementById('policy_file');
+
+            let toastTimeout;
+
+            function showToast(message, type = 'error') {
+                toast.textContent = message;
+                toast.className = `toast ${type}`;
+                
+                clearTimeout(toastTimeout);
+                toastTimeout = setTimeout(() => {
+                    toast.className = 'toast hidden';
+                }, 3000);
+            }
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const vlanId = document.getElementById('vlan_id').value;
+                const rate = document.getElementById('rate').value;
+                const customDescription = document.getElementById('custom_description').value.trim();
+                const file = fileInput.files[0];
+
+                if (!file) {
+                    showToast('Please select the policy-map file first.', 'error');
+                    return;
+                }
+
+                const originalBtnContent = generateBtn.innerHTML;
+                generateBtn.innerHTML = '<span>Generating...</span>';
+                generateBtn.disabled = true;
+                
+                try {
+                    const content = await file.text();
+                    
+                    // Check if policy already exists
+                    const existingPattern = new RegExp(`policy-map PM_IN_VLAN${vlanId}_.*?_${rate}Mbps`, 'i');
+                    if (existingPattern.test(content)) {
+                        outputCode.textContent = `Policy for VLAN ${vlanId} at ${rate}Mbps already exists.`;
+                        resultContainer.classList.remove('hidden');
+                        return;
+                    }
+
+                    const inboundPattern = new RegExp(`policy-map PM_IN_VLAN${vlanId}_(.+)`);
+                    const inboundMatch = content.match(inboundPattern);
+
+                    let fileDescription = "New_Service";
+                    let dscp = "af41";
+                    let hasOutbound = true;
+
+                    if (inboundMatch) {
+                        let rawDescription = inboundMatch[1].trim();
+                        let parts = rawDescription.split('_');
+                        let lastPart = parts[parts.length - 1];
+                        if (/^\d+(?:[mMkKgG](?:[bB]ps)?|[bB]ps)?$/i.test(lastPart)) {
+                            parts.pop();
+                        }
+                        fileDescription = parts.join('_');
+                        if (!fileDescription) {
+                            fileDescription = "Service";
+                        }
+
+                        const blockPattern = new RegExp(`policy-map PM_IN_VLAN${vlanId}_(.*?)(?=^!)`, 'ims');
+                        const blockMatch = content.match(blockPattern);
+                        
+                        if (blockMatch) {
+                            const blockText = blockMatch[0];
+                            const dscpMatch = blockText.match(/set dscp (\\S+)/i);
+                            if (dscpMatch) {
+                                dscp = dscpMatch[1].toLowerCase();
+                            }
+                        }
+
+                        const outboundPattern = new RegExp(`policy-map PM_OUT_VLAN${vlanId}_`);
+                        hasOutbound = outboundPattern.test(content);
+                    }
+                    
+                    let description = customDescription ? customDescription : fileDescription;
+                    let dscpUpper = dscp.toUpperCase();
+
+                    // Generate configurations
+                    const inboundName = `PM_IN_VLAN${vlanId}_${description}_${rate}Mbps`;
+                    const inboundConfig = `policy-map ${inboundName}
+  description Ingress Mark ${dscpUpper} 
+  class class-default 
+   set dscp ${dscp} 
+   police rate ${rate}m 
+    conform-action transmit 
+    exceed-action drop 
+!`;
+
+                    let outboundConfig = "";
+                    const outboundName = `PM_OUT_VLAN${vlanId}_${description}_${rate}Mbps`;
+                    if (hasOutbound) {
+                        outboundConfig = `\npolicy-map ${outboundName}
+  description Egress Rate Limit ${rate}Mbps 
+  class class-default 
+   police rate ${rate}m 
+    conform-action transmit 
+    exceed-action drop 
+!`;
+                    }
+
+                    const templateName = `VLAN${vlanId}_INTERFACE_TEMPLATE_${rate}Mbps`;
+                    const outboundRef = hasOutbound ? `\n  service-policy output ${outboundName}` : "";
+
+                    const templateConfig = `\ntemplate ${templateName}
+  storm-control broadcast level 20.00
+  storm-control multicast level 30.00
+  storm-control action trap
+  spanning-tree portfast
+  spanning-tree bpduguard enable
+  spanning-tree guard root
+  switchport mode access
+  service-policy input ${inboundName}${outboundRef}\n!`;
+
+                    outputCode.textContent = (inboundConfig + outboundConfig + templateConfig).trim();
+                    resultContainer.classList.remove('hidden');
+                    
+                    setTimeout(() => {
+                        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 100);
+
+                } catch (error) {
+                    showToast(error.message, 'error');
+                    resultContainer.classList.add('hidden');
+                } finally {
+                    generateBtn.innerHTML = originalBtnContent;
+                    generateBtn.disabled = false;
+                }
+            });
+
+            copyBtn.addEventListener('click', async () => {
+                const textToCopy = outputCode.textContent;
+                try {
+                    await navigator.clipboard.writeText(textToCopy);
+                    
+                    const originalHTML = copyBtn.innerHTML;
+                    copyBtn.innerHTML = `
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Copied!</span>
+                    `;
+                    copyBtn.style.color = 'var(--success)';
+                    copyBtn.style.borderColor = 'var(--success)';
+                    
+                    showToast('Configurations copied to clipboard!', 'success');
+
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalHTML;
+                        copyBtn.style.color = '';
+                        copyBtn.style.borderColor = '';
+                    }, 2000);
+                } catch (err) {
+                    showToast('Failed to copy text', 'error');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
